@@ -140,14 +140,5 @@ datarisk-case-ds-junior/
 ---
 
 <div align="center">
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/gabriel-chaves-veras)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Gabverz)
-
-</div>
-
----
-
-<div align="center">
 <sub>Built with rigor. Documented with care. Shipped with confidence.</sub>
 </div>

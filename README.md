@@ -138,7 +138,3 @@ datarisk-case-ds-junior/
 5. `TEMPO_RELACIONAMENTO_DIAS`
 
 ---
-
-<div align="center">
-<sub>Built with rigor. Documented with care. Shipped with confidence.</sub>
-</div>

@@ -1,40 +1,153 @@
-# Case Técnico – Cientista de Dados Júnior | Datarisk
+<div align="center">
 
-## Apresentação
+# 💰 Credit Risk Predictor
 
-Este repositório contém o case técnico para o processo seletivo de **Cientista de Dados Júnior** na **Datarisk**, uma consultoria especializada em soluções baseadas em dados e inteligência aplicada ao mercado de crédito.
-O desafio proposto envolve um projeto de **risco de crédito**, tema central de grande parte dos projetos que realizamos com nossos clientes.
+### *Predicting payment defaults to enable proactive collection strategies.*
 
-## Instruções
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-Model-006699?style=for-the-badge&logo=xgboost&logoColor=white)](https://xgboost.readthedocs.io/)
+[![Optuna](https://img.shields.io/badge/Optuna-Hyperparameter_Tuning-007bff?style=for-the-badge&logo=optuna&logoColor=white)](https://optuna.org/)
+[![Scikit-learn](https://img.shields.io/badge/Scikit--learn-Metrics-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/stable/)
 
-Todas as regras, orientações e detalhes sobre a execução do case estão no documento:
-📄 `Case DS Júnior 2025.pdf`
+</div>
 
-> O documento também contém **anexos com o dicionário de dados** e uma **visão dos relacionamentos entre as bases**, fundamentais para guiar sua análise.
-> **Leia com atenção antes de iniciar sua solução.**
+---
 
-## Bases de Dados
+## Overview
 
-Os arquivos estão disponíveis na pasta `/data` e incluem:
+This project develops a robust predictive model to estimate the probability of payment default for monthly charges, defined as **payments made 5 days or more after the due date**. Leveraging historical payment behavior, customer registration data, and monthly financial information, the solution aims to identify high-risk clients proactively. The entire pipeline, from data exploration and feature engineering to model optimization and interpretation, is documented and reproducible, demonstrating an end-to-end data science approach.
 
-- `base_cadastral.csv`: informações cadastrais dos clientes, como porte, segmento industrial, CEP, e-mail e data de cadastro.
-- `base_info.csv`: dados atualizados mensalmente com informações como renda do mês anterior e número de funcionários.
-- `base_pagamentos_desenvolvimento.csv`: histórico de transações anteriores dos clientes, incluindo data de vencimento, valor a pagar, taxa e data de pagamento (quando disponível).
-- `base_pagamentos_teste.csv`: transações recentes para as quais você deverá prever a probabilidade de inadimplência.
+---
 
-## Submissão
+## Key Highlights
 
-Você pode manter sua solução em um repositório pessoal para fins de portfólio, mas **a submissão oficial deve ser feita por e-mail**, conforme descrito no PDF, para garantir a **anonimidade na avaliação**.
+*   **Target Definition**: Precisely engineered the target variable based on a 5-day payment delay, resulting in approximately 7% of charges classified as default.
+*   **Feature Engineering**: Developed critical features such as `TAXA_HISTORICA_INADIMPLENCIA` (historical default rate) and `TEMPO_RELACIONAMENTO_DIAS` (customer relationship duration), which proved highly predictive.
+*   **Temporal Validation**: Implemented a temporal train/validation split to simulate real-world scenarios and prevent data leakage, ensuring the model's robustness for future predictions.
+*   **Model Optimization**: Utilized Optuna for Bayesian hyperparameter tuning, significantly improving the XGBoost model's AUC-PR from 0.50 to 0.59.
+*   **Actionable Insights**: Identified that `TAXA_HISTORICA_INADIMPLENCIA` and regional factors (`CEP_2_DIG`) are the most influential predictors, providing clear guidance for business interventions.
+*   **Proactive Strategy**: The final XGBoost model provides continuous probability scores, enabling targeted collection efforts for the highest-risk customers (e.g., those with probabilities above 0.52, representing the top 7% of risk).
 
-💻 A solução deve ser desenvolvida e entregue obrigatoriamente em Python.
+---
 
-⚠️ **Não inclua informações pessoais (nome, LinkedIn, GitHub, etc.) nos arquivos entregues.**
+## Pipeline Architecture
 
-## Recomendação
+| Stage | What happens |
+|---|---|
+| **Raw Data** | Four CSV datasets (`base_cadastral`, `base_info`, `base_pagamentos_desenvolvimento`, `base_pagamentos_teste`) |
+| **EDA & Data Cleaning** | Type conversion, null handling, duplicate checks, identification of logical inconsistencies, and target variable construction. |
+| **Feature Engineering** | Merging datasets, creating temporal, behavioral, and historical features (`NUMERO_COBRANCA_CLIENTE`, `TEMPO_RELACIONAMENTO_DIAS`, `TAXA_HISTORICA_INADIMPLENCIA`), and handling cold-start clients. |
+| **Model Training & Validation** | Temporal split (train/validation), initial evaluation of LightGBM, XGBoost, and CatBoost, focusing on AUC-PR. |
+| **Hyperparameter Optimization** | Optuna (TPE algorithm) for tuning XGBoost and CatBoost, selecting the best model based on AUC-PR and training efficiency. |
+| **Final Model & Predictions** | Application of the optimized XGBoost model to the test set to generate final default probability predictions. |
 
-Mais do que aplicar técnicas avançadas, queremos entender **como você pensa, estrutura sua solução e toma decisões com base no problema de negócio**.
-Soluções bem organizadas, com raciocínio claro e decisões justificadas são sempre valorizadas.
+---
 
-Seja também **curioso e criativo**: explore os dados com atenção e construa sua solução como se fosse apresentar para um cliente — explicando o que foi feito, por que foi feito e como sua proposta pode ser útil na prática.
+## Challenges & How We Overcame Them
 
-**Boa sorte no desafio!**
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**⚠️ Data Inconsistencies & Leakage**
+
+Identified 27 records where `DATA_VENCIMENTO` was prior to `DATA_EMISSAO_DOCUMENTO`. Instead of discarding, a `FLAG_REGISTRO_INCONSISTENTE` was created, as these records showed a 96.3% default rate, preserving valuable predictive signal while preventing direct leakage.
+
+</td>
+<td width="33%" valign="top">
+
+**🔍 Cold Start Clients**
+
+Encountered 88 new clients in the test set without prior historical data. Addressed this by implementing fallback strategies for behavioral features, such as filling categorical nulls with "Desconhecido" and allowing `TAXA_HISTORICA_INADIMPLENCIA` to remain `NaN` for first-time charges, which XGBoost handles natively.
+
+</td>
+<td width="33%" valign="top">
+
+**📍 High-Cardinality Categorical Features & Redundancy**
+
+`DDD` and `CEP_2_DIG` showed strong association (V de Cramér = 0.63). After assessing their low individual predictive importance, `DDD` was removed to reduce redundancy and model complexity, streamlining the feature set.
+
+</td>
+</tr>
+</table>
+
+---
+
+## Tech Stack
+
+<table>
+  <tr>
+    <td><b>Core</b></td>
+    <td>Python (3.11) · Pandas · NumPy · Scikit-learn</td>
+  </tr>
+  <tr>
+    <td><b>ML & Tuning</b></td>
+    <td>XGBoost · CatBoost · Optuna</td>
+  </tr>
+  <tr>
+    <td><b>Data Visualization</b></td>
+    <td>Matplotlib · Seaborn</td>
+  </tr>
+  <tr>
+    <td><b>Version Control</b></td>
+    <td>Git · GitHub</td>
+  </tr>
+</table>
+
+---
+
+## Project Structure
+
+```bash
+datarisk-case-ds-junior/
+│
+├── data/
+│   ├── base_cadastral.csv
+│   ├── base_info.csv
+│   ├── base_pagamentos_desenvolvimento.csv
+│   └── base_pagamentos_teste.csv
+│
+├── notebooks/
+│   ├── previsao_inadimplencia.ipynb   # Main development notebook (EDA, FE, Modeling, Evaluation)
+│   └── relatorio_solucao.ipynb         # Project report and technical decisions
+│
+├── .gitignore
+├── Case DS Júnior 2025.pdf             # Original project instructions
+├── README.md
+├── requirements.txt                    # Python dependencies
+└── submissao_case.csv                  # Final predictions (ID_CLIENTE, SAFRA_REF, PROBABILIDADE_INADIMPLENCIA)
+```
+
+---
+
+## Key Results
+
+| Metric | Score (XGBoost, Validation Set) |
+|---|---|
+| **AUC-PR** | `0.5867` |
+| **Recall** (at threshold 0.5) | `0.8372` |
+| **Accuracy** (at threshold 0.5) | `0.8219` |
+
+> Model: XGBoost · Tuning: Optuna · Class imbalance: `scale_pos_weight`
+
+**Top predictive features (XGBoost Gain):**
+1. `TAXA_HISTORICA_INADIMPLENCIA`
+2. `CEP_2_DIG`
+3. `MES_COBRANCA`
+4. `VALOR_A_PAGAR`
+5. `TEMPO_RELACIONAMENTO_DIAS`
+
+---
+
+<div align="center">
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/gabriel-chaves-veras)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Gabverz)
+
+</div>
+
+---
+
+<div align="center">
+<sub>Built with rigor. Documented with care. Shipped with confidence.</sub>
+</div>
